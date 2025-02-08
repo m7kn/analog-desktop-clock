@@ -5,6 +5,7 @@ import sys
 import time
 import math
 
+
 class AnalogClock(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -13,8 +14,15 @@ class AnalogClock(QMainWindow):
         self.opacity = 1.0
         self.hover = False
         self.dragging = False
-        self.screen = QDesktopWidget().screenGeometry()        
-        self.initUI()        
+        self.screen = QDesktopWidget().screenGeometry()      
+        self.initialization_complete = False
+        self.initUI()     
+        
+        # Késleltetett inicializáció befejezés
+        QTimer.singleShot(250, self.complete_initialization)           
+
+    def complete_initialization(self):      
+        self.initialization_complete = True
 
     def initUI(self):
         self.setGeometry(100, 100, 400, 400)
@@ -32,12 +40,18 @@ class AnalogClock(QMainWindow):
         self.animation.setEasingCurve(QEasingCurve.InOutQuad)        
 
     def enterEvent(self, event):
+        if not self.initialization_complete:
+            return
+                
         self.hover = True
         self.animation.setStartValue(self.windowOpacity())
         self.animation.setEndValue(0.1)  # Majdnem átlátszó
         self.animation.start()
 
     def leaveEvent(self, event):
+        if not self.initialization_complete:
+            return
+                
         self.hover = False
         self.animation.setStartValue(self.windowOpacity())
         self.animation.setEndValue(1.0)  # Teljesen látható
