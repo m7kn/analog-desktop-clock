@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDesktopWidget
 from PyQt5.QtGui import QPainter, QColor, QPen, QRadialGradient, QFont, QFontDatabase
 from PyQt5.QtCore import Qt, QTimer, QPoint, QRectF, QPropertyAnimation, QEasingCurve
 import sys
@@ -11,7 +11,9 @@ class AnalogClock(QMainWindow):
         QFontDatabase.addApplicationFont("Tangerine-Regular.ttf")
         self.opacity = 1.0
         self.hover = False
-        self.initUI()
+        self.dragging = False
+        self.screen = QDesktopWidget().screenGeometry()        
+        self.initUI()        
 
     def initUI(self):
         self.setGeometry(100, 100, 400, 400)
@@ -143,24 +145,52 @@ class AnalogClock(QMainWindow):
         painter.setBrush(QColor(60, 60, 60))
         painter.drawEllipse(center, 3, 3)
 
+    def jumpToOtherSide(self):
+        current_x = self.x()
+        screen_width = self.screen.width()
+        
+        if current_x < screen_width / 2:
+            new_x = screen_width - self.width() - 10
+        else:
+            new_x = 10
+        
+        # Animáció az ugráshoz
+        self.anim = QPropertyAnimation(self, b"geometry")
+        self.anim.setDuration(200)  # 200ms
+        self.anim.setStartValue(self.geometry())
+        new_geometry = self.geometry()
+        new_geometry.moveLeft(new_x)
+        self.anim.setEndValue(new_geometry)
+        self.anim.start()
+
     def mousePressEvent(self, event):
         self.oldPos = event.globalPos()
-        # Ideiglenesen visszaállítjuk az átlátszóságot húzás közben
+        self.dragStart = event.globalPos()
+        self.dragging = False
+        # Átlátszóság beállítása
         self.animation.setStartValue(self.windowOpacity())
         self.animation.setEndValue(0.5)
         self.animation.start()
 
     def mouseReleaseEvent(self, event):
-        # Ha még mindig hover állapotban van, visszaállítjuk az átlátszóságot
+        if not self.dragging:
+            self.jumpToOtherSide()
+
+        self.dragging = False
+        
+        # Átlátszóság visszaállítása
         if self.hover:
             self.animation.setStartValue(self.windowOpacity())
             self.animation.setEndValue(0.1)
             self.animation.start()
 
     def mouseMoveEvent(self, event):
-        delta = event.globalPos() - self.oldPos
-        self.move(self.x() + delta.x(), self.y() + delta.y())
-        self.oldPos = event.globalPos()
+        # Ha az egér elmozdult több mint 5 pixelt, akkor húzásnak számít
+        if (event.globalPos() - self.dragStart).manhattanLength() > 5:
+            self.dragging = True
+            delta = event.globalPos() - self.oldPos
+            self.move(self.x() + delta.x(), self.y() + delta.y())
+            self.oldPos = event.globalPos()
 
     def contextMenuEvent(self, event):
         self.close()
