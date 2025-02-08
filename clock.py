@@ -1,26 +1,44 @@
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtGui import QPainter, QColor, QPen, QRadialGradient, QFont, QFontDatabase
+from PyQt5.QtCore import Qt, QTimer, QPoint, QRectF, QPropertyAnimation, QEasingCurve
 import sys
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5.QtGui import QPainter, QColor, QPen, QRadialGradient, QLinearGradient, QFont, QFontDatabase
-from PyQt5.QtCore import Qt, QTimer, QPoint, QRectF
 import math
 
 class AnalogClock(QMainWindow):
     def __init__(self):
         super().__init__()
-        # Kalligrafikus betűtípus hozzáadása
         QFontDatabase.addApplicationFont("Tangerine-Regular.ttf")
+        self.opacity = 1.0
+        self.hover = False
         self.initUI()
 
     def initUI(self):
         self.setGeometry(100, 100, 400, 400)
-        self.setWindowTitle('Elegáns Analóg Óra')
+        self.setWindowTitle('Analog Clock')
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         timer = QTimer(self)
         timer.timeout.connect(self.update)
         timer.start(1000)
+        
+        # Animáció beállítása
+        self.animation = QPropertyAnimation(self, b'windowOpacity')
+        self.animation.setDuration(300)  # 300 ms
+        self.animation.setEasingCurve(QEasingCurve.InOutQuad)        
+
+    def enterEvent(self, event):
+        self.hover = True
+        self.animation.setStartValue(self.windowOpacity())
+        self.animation.setEndValue(0.1)  # Majdnem átlátszó
+        self.animation.start()
+
+    def leaveEvent(self, event):
+        self.hover = False
+        self.animation.setStartValue(self.windowOpacity())
+        self.animation.setEndValue(1.0)  # Teljesen látható
+        self.animation.start()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -127,6 +145,17 @@ class AnalogClock(QMainWindow):
 
     def mousePressEvent(self, event):
         self.oldPos = event.globalPos()
+        # Ideiglenesen visszaállítjuk az átlátszóságot húzás közben
+        self.animation.setStartValue(self.windowOpacity())
+        self.animation.setEndValue(0.5)
+        self.animation.start()
+
+    def mouseReleaseEvent(self, event):
+        # Ha még mindig hover állapotban van, visszaállítjuk az átlátszóságot
+        if self.hover:
+            self.animation.setStartValue(self.windowOpacity())
+            self.animation.setEndValue(0.1)
+            self.animation.start()
 
     def mouseMoveEvent(self, event):
         delta = event.globalPos() - self.oldPos
