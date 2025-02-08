@@ -8,7 +8,8 @@ import math
 class AnalogClock(QMainWindow):
     def __init__(self):
         super().__init__()
-        QFontDatabase.addApplicationFont("Tangerine-Regular.ttf")
+        # QFontDatabase.addApplicationFont("Tangerine-Regular.ttf")
+        QFontDatabase.addApplicationFont("GreatVibes-Regular.ttf")
         self.opacity = 1.0
         self.hover = False
         self.dragging = False
@@ -73,9 +74,10 @@ class AnalogClock(QMainWindow):
 
         # "Sonnet" felirat kalligrafikus betűtípussal
         painter.setPen(QColor(60, 60, 100))
-        fancy_font = QFont("Tangerine", 42)
+        # fancy_font = QFont("Tangerine", 42)
+        fancy_font = QFont("GreatVibes", 36)
         painter.setFont(fancy_font)
-        text_rect = QRectF(center.x() - radius/2, center.y() - radius/3, radius, radius/4)
+        text_rect = QRectF(center.x() - radius/2, center.y() + radius/4, radius, radius/3)
         painter.drawText(text_rect, Qt.AlignCenter, "Sonnet")
 
         # Óraszámok normál betűtípussal
